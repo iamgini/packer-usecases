@@ -1,14 +1,23 @@
 ---
 # Set a version for this new box.
+- name: Clean up old builds if any
+  file:
+    state: absent
+    path: "{{ box_loop_item }}/build-output"
+  
 - name: Get current box version from Vagrant.
   uri:
-    url: https://app.vagrantup.com/api/v1/box/{{ vagrant_cloud_username }}/{{ box_item }}
+    url: https://app.vagrantup.com/api/v1/box/{{ vagrant_cloud_username }}/{{ box_loop_item }}
     return_content: true
   register: box_info
 
+- name: Print current version
+  debug:
+    msg: "{{ box_info.json.current_version.version }}"
 - name: Set the current version of the base box.
   set_fact:
-    current_box_version: "{{ (box_info.content | from_json).current_version.version }}"
+    current_box_version: "{{ box_info.json.current_version.version }}"
+    # "{{ (box_info.content | from_json).current_version.version }}"
 
 - name: Set the next minor version of the base box.
   set_fact:
@@ -17,12 +26,13 @@
 
 - name: Print info about current box.
   debug:
-    msg: "Building new {{ vagrant_cloud_username }}/{{ box_item }} box version {{ new_box_version }}"
+    msg: "Building new {{ vagrant_cloud_username }}/{{ box_loop_item }} box version {{ new_box_version }}"
 
 # Build and push the new box.
 - name: Build and push the box using Packer.
   command: >
     packer build -var 'box_version={{ new_box_version }}' .
-    chdir={{ box_item }}
+    chdir={{ box_loop_item }}
   environment:
     VAGRANT_CLOUD_TOKEN: "{{ vagrant_cloud_api_key }}"
+  #when: a is defined

@@ -30,8 +30,8 @@
       include_tasks: ansible-playbooks/vagrantbox-builder.yaml
       with_items: "{{ vagrant_box_list }}"
       loop_control:
-        loop_var: box_item
-      when: "box_item not in vagrant_box_skip_list"
+        loop_var: box_loop_item
+      when: "box_loop_item not in vagrant_box_skip_list"
       
     #post-processor "vagrant-cloud" {
     #  box_tag = "ginigangadharan/ubuntu2110-gui"
