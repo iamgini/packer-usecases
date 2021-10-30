@@ -1,0 +1,72 @@
+---
+- name: Packer Build for Creating VagrantBox
+  hosts: localhost
+  gather_facts: false
+  #become: true
+  
+  #vars_files:
+  #  - vars/vars_common.yaml        # common variables
+  #  - vars/vars_exclusions.yaml     # baseline exclusions
+  vars:
+    notification_email: app_owners@lab.local
+    #datetimestr: "{{ansible_date_time.date}}{{ansible_date_time.hour}}{{ansible_date_time.minute}}"
+    datetimestr: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+    report_location: '/tmp/reports'
+    vagrant_cloud_username: ginigangadharan
+    vagrant_cloud_access_token_file: "{{ lookup('env', 'HOME') }}/.vagrant-cloud-access-token"
+    vagrant_box_list:
+      - ubuntu2110-gui
+    vagrant_box_skip_list:
+      - test-skip
+      #- ubuntu2110-gui
+    #versions: {}
+
+  tasks:
+    - name: Fetching Vagrant_cloud API Key
+      set_fact:
+        vagrant_cloud_api_key: "{{ lookup('file',vagrant_cloud_access_token_file) }}"
+
+    - name: Building VagrantBoxes
+      include_tasks: ansible-playbooks/vagrantbox-builder.yaml
+      with_items: "{{ vagrant_box_list }}"
+      loop_control:
+        loop_var: box_item
+      when: "box_item not in vagrant_box_skip_list"
+      
+    #post-processor "vagrant-cloud" {
+    #  box_tag = "ginigangadharan/ubuntu2110-gui"
+    #  version = "${var.box_version}"
+    #}
+
+
+    #- name: Ensure Directory for Reports
+    #  become: false
+    #  file:
+    #    path: "{{ report_location }}"
+    #    state: directory
+    #  delegate_to: localhost
+
+    #- name: Linux Scanning
+    #  include_role:
+    #    name: security-baseline-linux
+#
+    #- name: "Sending Email with Report........."
+    #  include_role:
+    #    name: send-email
+    #  vars:
+    #    email_report_body: "{{ dns_validation_email_body }}"
+    #  when: sendemail is defined
+#
+    ##final_summary: "{{ lookup('template', 'template.j2') }}"
+    #- name: BSS Report
+    #  debug:
+    #    msg: "{{ bss_report_final }}"
+    #    
+    #- name: Generate Report
+    #  template:
+    #    src: templates/bss_report.md
+    #    dest: ./test_report.md
+    #  delegate_to: localhost
+    #  become: false
+        
+
